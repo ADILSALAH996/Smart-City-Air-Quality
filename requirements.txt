@@ -1,0 +1,7 @@
+requests
+pandas
+mysql-connector-python
+schedule
+matplotlib
+streamlit
+scikit-learn
