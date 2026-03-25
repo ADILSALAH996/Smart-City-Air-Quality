@@ -4,6 +4,7 @@ from database import insert_data
 import schedule
 import time
 from email_alert import send_alert
+from aqi_calculator import calculate_real_aqi
 
 # -------- CONFIG --------
 API_KEY = "bc52bb5270a3e0c7ae5d829f28e04202"
@@ -48,16 +49,25 @@ def aqi_status(aqi):
 def job():
     result = fetch_air_quality()
     if result:
+        # ---- calculate realistic AQI first ----
+        real_aqi = calculate_real_aqi(result)
+        result["real_aqi"] = real_aqi
+
+        # ---- store data ----
         insert_data(result)
-        print("Data stored at", result["timestamp"])
+        print("Data stored at", result["timestamp"], "| Real AQI:", real_aqi)
 
-        # ALERT CONDITION
-        if result["aqi"] >= 4:
-            send_alert(result["aqi"])
-            print("⚠️ Alert email sent!")
+        # ---- alert condition (use real AQI now) ----
+        # Always send update email
+        send_alert(real_aqi)
 
+            # If dangerous, send one extra urgent alert
+        if real_aqi >= 200:
+            send_alert(real_aqi)
+            print("🚨 Urgent alert sent!")
+            
 if __name__ == "__main__":
-    schedule.every(10).minutes.do(job)
+    schedule.every(1).minutes.do(job)
 
     print("Air Quality Monitoring Started...")
 
